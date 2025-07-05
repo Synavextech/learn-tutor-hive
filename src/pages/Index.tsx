@@ -14,10 +14,10 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-primary">WiseWorldTutors</h1>
             </div>
             <div className="flex space-x-4">
-              <Button variant="ghost">Find Tutors</Button>
-              <Button variant="ghost">Become a Tutor</Button>
-              <Button variant="outline">Sign In</Button>
-              <Button>Get Started</Button>
+              <Button variant="ghost" onClick={() => window.location.href = '/find-tutors'}>Find Tutors</Button>
+              <Button variant="ghost" onClick={() => window.location.href = '/tutor-application'}>Become a Tutor</Button>
+              <Button variant="outline" onClick={() => window.location.href = '/auth'}>Sign In</Button>
+              <Button onClick={() => window.location.href = '/auth'}>Get Started</Button>
             </div>
           </div>
         </div>
@@ -36,10 +36,10 @@ const Index = () => {
             or share your expertise with learners around the world.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" className="px-8">
+            <Button size="lg" className="px-8" onClick={() => window.location.href = '/find-tutors'}>
               Find a Tutor
             </Button>
-            <Button size="lg" variant="outline" className="px-8">
+            <Button size="lg" variant="outline" className="px-8" onClick={() => window.location.href = '/tutor-application'}>
               Start Teaching
             </Button>
           </div>
@@ -102,7 +102,7 @@ const Index = () => {
                   <li>• Schedule sessions that fit your availability</li>
                   <li>• Track your learning progress</li>
                 </ul>
-                <Button className="w-full">Start Learning Today</Button>
+                <Button className="w-full" onClick={() => window.location.href = '/auth'}>Start Learning Today</Button>
               </CardContent>
             </Card>
             
@@ -120,7 +120,7 @@ const Index = () => {
                   <li>• Build your reputation with student reviews</li>
                   <li>• Access teaching tools and resources</li>
                 </ul>
-                <Button className="w-full" variant="outline">Apply to Teach</Button>
+                <Button className="w-full" variant="outline" onClick={() => window.location.href = '/tutor-application'}>Apply to Teach</Button>
               </CardContent>
             </Card>
           </div>
