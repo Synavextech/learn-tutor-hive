@@ -88,10 +88,11 @@ export type Database = {
           id: string
           payee_id: string
           payer_id: string
+          paypal_order_id: string | null
+          paypal_payment_id: string | null
           processed_at: string | null
           session_id: string
           status: Database["public"]["Enums"]["payment_status"]
-          stripe_payment_intent_id: string | null
         }
         Insert: {
           amount: number
@@ -100,10 +101,11 @@ export type Database = {
           id?: string
           payee_id: string
           payer_id: string
+          paypal_order_id?: string | null
+          paypal_payment_id?: string | null
           processed_at?: string | null
           session_id: string
           status?: Database["public"]["Enums"]["payment_status"]
-          stripe_payment_intent_id?: string | null
         }
         Update: {
           amount?: number
@@ -112,10 +114,11 @@ export type Database = {
           id?: string
           payee_id?: string
           payer_id?: string
+          paypal_order_id?: string | null
+          paypal_payment_id?: string | null
           processed_at?: string | null
           session_id?: string
           status?: Database["public"]["Enums"]["payment_status"]
-          stripe_payment_intent_id?: string | null
         }
         Relationships: [
           {
