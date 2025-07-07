@@ -14,14 +14,14 @@ interface Payment {
   status: string;
   processed_at: string;
   created_at: string;
-  session: {
+  session?: {
     title: string;
     scheduled_start: string;
-    learner_profile: {
-      first_name: string;
-      last_name: string;
+    learner_profile?: {
+      first_name: string | null;
+      last_name: string | null;
     };
-    subject: {
+    subject?: {
       name: string;
     };
   };
@@ -67,15 +67,15 @@ const Earnings = () => {
 
       if (tutorError) throw tutorError;
 
-      // Fetch payments with session details
+      // Fetch payments with basic session data
       const { data: paymentData, error: paymentError } = await supabase
         .from('payments')
         .select(`
           *,
-          session:tutoring_sessions!payments_session_id_fkey(
+          session:tutoring_sessions(
             title,
             scheduled_start,
-            learner_profile:profiles!tutoring_sessions_learner_id_fkey(first_name, last_name),
+            learner_id,
             subject:subjects(name)
           )
         `)
@@ -84,8 +84,31 @@ const Earnings = () => {
 
       if (paymentError) throw paymentError;
 
-      const payments = paymentData || [];
-      setPayments(payments);
+      // Get unique learner IDs to fetch their profiles
+      const learnerIds = paymentData?.map(p => p.session?.learner_id).filter(Boolean) || [];
+      
+      let profilesData: any[] = [];
+      if (learnerIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', learnerIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Merge profiles with payment data
+      const paymentsWithProfiles = paymentData?.map(payment => ({
+        ...payment,
+        session: payment.session ? {
+          ...payment.session,
+          learner_profile: profilesData.find(p => p.user_id === payment.session?.learner_id) || null
+        } : null
+      })) || [];
+
+      setPayments(paymentsWithProfiles);
 
       // Calculate statistics
       const now = new Date();
@@ -94,8 +117,8 @@ const Earnings = () => {
       const startOfThisYear = startOfYear(now);
       const endOfThisYear = endOfYear(now);
 
-      const completedPayments = payments.filter(p => p.status === 'completed');
-      const pendingPayments = payments.filter(p => p.status === 'pending');
+      const completedPayments = paymentsWithProfiles.filter(p => p.status === 'completed');
+      const pendingPayments = paymentsWithProfiles.filter(p => p.status === 'pending');
 
       const totalEarnings = completedPayments.reduce((sum, p) => sum + p.amount, 0);
       

@@ -28,10 +28,10 @@ interface TeachingSession {
     name: string;
     category: string;
   };
-  learner_profile: {
-    first_name: string;
-    last_name: string;
-    avatar_url: string;
+  learner_profile?: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
   };
   payment?: {
     status: string;
@@ -62,13 +62,12 @@ const TeachingSessions = () => {
 
       if (tutorError) throw tutorError;
 
-      // Fetch sessions
+      // Fetch sessions with basic data
       const { data, error } = await supabase
         .from('tutoring_sessions')
         .select(`
           *,
           subject:subjects(name, category),
-          learner_profile:profiles!tutoring_sessions_learner_id_fkey(first_name, last_name, avatar_url),
           payment:payments(status, amount)
         `)
         .eq('tutor_id', tutorData.id)
@@ -76,7 +75,28 @@ const TeachingSessions = () => {
 
       if (error) throw error;
 
-      setSessions(data || []);
+      // Get unique learner IDs to fetch profiles
+      const learnerIds = data?.map(s => s.learner_id).filter(Boolean) || [];
+      
+      let profilesData: any[] = [];
+      if (learnerIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, avatar_url')
+          .in('user_id', learnerIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Merge profiles with session data
+      const sessionsWithProfiles = data?.map(session => ({
+        ...session,
+        learner_profile: profilesData.find(p => p.user_id === session.learner_id) || null
+      })) || [];
+
+      setSessions(sessionsWithProfiles);
     } catch (error) {
       console.error('Error fetching sessions:', error);
       toast({

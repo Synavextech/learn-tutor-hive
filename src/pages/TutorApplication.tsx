@@ -202,7 +202,7 @@ const TutorApplication = () => {
           hourly_rate: formData.hourly_rate,
           languages: formData.languages.filter(l => l.trim()),
           certifications: formData.certifications.filter(c => c.trim()),
-          status: existingApplication ? existingApplication.status : 'pending',
+          status: (existingApplication ? existingApplication.status : 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
         })
         .select()
         .single();

@@ -23,12 +23,12 @@ interface TutorApplication {
   status: string;
   created_at: string;
   approved_at: string | null;
-  profile: {
-    first_name: string;
-    last_name: string;
+  profile?: {
+    first_name: string | null;
+    last_name: string | null;
     email: string;
-    bio: string;
-    avatar_url: string;
+    bio: string | null;
+    avatar_url: string | null;
   };
   subjects: Array<{
     proficiency_level: string;
@@ -71,12 +71,11 @@ const AdminApplications = () => {
         return;
       }
 
-      // Fetch tutor applications
-      const { data, error } = await supabase
+      // Fetch tutor applications with basic data first
+      const { data: tutorData, error: tutorError } = await supabase
         .from('tutors')
         .select(`
           *,
-          profile:profiles!tutors_user_id_fkey(first_name, last_name, email, bio, avatar_url),
           subjects:tutor_subjects(
             proficiency_level,
             subject:subjects(name, category)
@@ -84,9 +83,30 @@ const AdminApplications = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (tutorError) throw tutorError;
 
-      setApplications(data || []);
+      // Get unique user IDs to fetch profiles
+      const userIds = tutorData?.map(t => t.user_id) || [];
+      
+      let profilesData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, email, bio, avatar_url')
+          .in('user_id', userIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Merge profiles with tutor data
+      const applicationsWithProfiles = tutorData?.map(tutor => ({
+        ...tutor,
+        profile: profilesData.find(p => p.user_id === tutor.user_id) || null
+      })) || [];
+
+      setApplications(applicationsWithProfiles);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast({

@@ -31,10 +31,10 @@ interface Session {
   };
   tutor: {
     hourly_rate: number;
-    profile: {
-      first_name: string;
-      last_name: string;
-      avatar_url: string;
+    profile?: {
+      first_name: string | null;
+      last_name: string | null;
+      avatar_url: string | null;
     };
   };
   payment?: {
@@ -64,10 +64,7 @@ const Sessions = () => {
         .select(`
           *,
           subject:subjects(name, category),
-          tutor:tutors!inner(
-            hourly_rate,
-            profile:profiles!tutors_user_id_fkey(first_name, last_name, avatar_url)
-          ),
+          tutor:tutors!inner(hourly_rate, user_id),
           payment:payments(status, amount)
         `)
         .eq('learner_id', user!.id)
@@ -75,7 +72,31 @@ const Sessions = () => {
 
       if (error) throw error;
 
-      setSessions(data || []);
+      // Get tutor user IDs to fetch profiles
+      const tutorUserIds = data?.map(s => s.tutor?.user_id).filter(Boolean) || [];
+      
+      let profilesData: any[] = [];
+      if (tutorUserIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, avatar_url')
+          .in('user_id', tutorUserIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Merge profiles with session data
+      const sessionsWithProfiles = data?.map(session => ({
+        ...session,
+        tutor: {
+          ...session.tutor,
+          profile: profilesData.find(p => p.user_id === session.tutor?.user_id) || null
+        }
+      })) || [];
+
+      setSessions(sessionsWithProfiles);
     } catch (error) {
       console.error('Error fetching sessions:', error);
       toast({

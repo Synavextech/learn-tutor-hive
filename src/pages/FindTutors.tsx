@@ -18,11 +18,11 @@ interface Tutor {
   experience_years: number;
   education: string;
   languages: string[];
-  profile: {
-    first_name: string;
-    last_name: string;
-    bio: string;
-    avatar_url: string;
+  profile?: {
+    first_name: string | null;
+    last_name: string | null;
+    bio: string | null;
+    avatar_url: string | null;
   };
   subjects: Array<{
     subject: {
@@ -56,12 +56,11 @@ const FindTutors = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch approved tutors with their profiles and subjects
+      // Fetch tutors with basic data first
       const { data: tutorData, error: tutorError } = await supabase
         .from('tutors')
         .select(`
           *,
-          profile:profiles!tutors_user_id_fkey(first_name, last_name, bio, avatar_url),
           subjects:tutor_subjects(
             proficiency_level,
             subject:subjects(id, name, category)
@@ -71,6 +70,27 @@ const FindTutors = () => {
 
       if (tutorError) throw tutorError;
 
+      // Get unique tutor user IDs to fetch profiles
+      const userIds = tutorData?.map(t => t.user_id) || [];
+      
+      let profilesData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, bio, avatar_url')
+          .in('user_id', userIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Merge profiles with tutor data
+      const tutorsWithProfiles = tutorData?.map(tutor => ({
+        ...tutor,
+        profile: profilesData.find(p => p.user_id === tutor.user_id) || null
+      })) || [];
+
       // Fetch all subjects for filtering
       const { data: subjectData, error: subjectError } = await supabase
         .from('subjects')
@@ -79,7 +99,7 @@ const FindTutors = () => {
 
       if (subjectError) throw subjectError;
 
-      setTutors(tutorData || []);
+      setTutors(tutorsWithProfiles);
       setSubjects(subjectData || []);
     } catch (error) {
       console.error('Error fetching data:', error);

@@ -36,11 +36,11 @@ interface SessionWithStudent {
   subject: {
     name: string;
   };
-  learner_profile: {
-    first_name: string;
-    last_name: string;
+  learner_profile?: {
+    first_name: string | null;
+    last_name: string | null;
     email: string;
-    avatar_url: string;
+    avatar_url: string | null;
   };
   payment?: {
     amount: number;

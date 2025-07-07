@@ -16,19 +16,19 @@ interface UserProfile {
   id: string;
   user_id: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  bio: string;
-  phone: string;
-  avatar_url: string;
+  first_name: string | null;
+  last_name: string | null;
+  bio: string | null;
+  phone: string | null;
+  avatar_url: string | null;
   created_at: string;
-  roles: Array<{
+  roles?: Array<{
     role: string;
   }>;
   tutor?: {
     status: string;
-    hourly_rate: number;
-    experience_years: number;
+    hourly_rate: number | null;
+    experience_years: number | null;
   };
   session_count?: number;
 }
@@ -66,24 +66,62 @@ const AdminUsers = () => {
         return;
       }
 
-      // Fetch all user profiles with roles and tutor info
-      const { data, error } = await supabase
+      // Fetch all user profiles
+      const { data: profilesData, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          roles:user_roles(role),
-          tutor:tutors(status, hourly_rate, experience_years),
-          sessions:tutoring_sessions(id)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      // Process the data to flatten sessions count
-      const processedUsers = data?.map(user => ({
-        ...user,
-        session_count: user.sessions?.length || 0,
-        sessions: undefined, // Remove the sessions array after counting
+      // Get user IDs to fetch roles and tutor info
+      const userIds = profilesData?.map(p => p.user_id) || [];
+      
+      // Fetch user roles
+      let rolesData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: roles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds);
+        
+        if (!rolesError) {
+          rolesData = roles || [];
+        }
+      }
+
+      // Fetch tutor data
+      let tutorData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: tutors, error: tutorError } = await supabase
+          .from('tutors')
+          .select('user_id, status, hourly_rate, experience_years')
+          .in('user_id', userIds);
+        
+        if (!tutorError) {
+          tutorData = tutors || [];
+        }
+      }
+
+      // Fetch session counts
+      let sessionCounts: any[] = [];
+      if (userIds.length > 0) {
+        const { data: sessions, error: sessionError } = await supabase
+          .from('tutoring_sessions')
+          .select('learner_id')
+          .in('learner_id', userIds);
+        
+        if (!sessionError) {
+          sessionCounts = sessions || [];
+        }
+      }
+
+      // Process the data to combine everything
+      const processedUsers = profilesData?.map(profile => ({
+        ...profile,
+        roles: rolesData.filter(r => r.user_id === profile.user_id),
+        tutor: tutorData.find(t => t.user_id === profile.user_id),
+        session_count: sessionCounts.filter(s => s.learner_id === profile.user_id).length,
       })) || [];
 
       setUsers(processedUsers);
