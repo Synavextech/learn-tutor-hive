@@ -36,7 +36,7 @@ interface TeachingSession {
   payment?: {
     status: string;
     amount: number;
-  };
+  } | null;
 }
 
 const TeachingSessions = () => {
@@ -90,10 +90,11 @@ const TeachingSessions = () => {
         }
       }
 
-      // Merge profiles with session data
+      // Merge profiles with session data and fix payment type
       const sessionsWithProfiles = data?.map(session => ({
         ...session,
-        learner_profile: profilesData.find(p => p.user_id === session.learner_id) || null
+        learner_profile: profilesData.find(p => p.user_id === session.learner_id) || null,
+        payment: Array.isArray(session.payment) ? session.payment[0] || null : session.payment
       })) || [];
 
       setSessions(sessionsWithProfiles);

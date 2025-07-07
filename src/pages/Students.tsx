@@ -41,10 +41,10 @@ interface SessionWithStudent {
     last_name: string | null;
     email: string;
     avatar_url: string | null;
-  };
+  } | null;
   payment?: {
     amount: number;
-  };
+  } | null;
 }
 
 const Students = () => {
@@ -88,9 +88,25 @@ const Students = () => {
       // Process sessions to create student summaries
       const studentMap = new Map<string, Student>();
 
-      sessions?.forEach((session: SessionWithStudent) => {
+      // Get unique learner IDs to fetch profiles
+      const learnerIds = sessions?.map(s => s.learner_id).filter(Boolean) || [];
+      
+      let profilesData: any[] = [];
+      if (learnerIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, email, avatar_url')
+          .in('user_id', learnerIds);
+        
+        if (!profileError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Process sessions with profiles to create student summaries
+      sessions?.forEach((session: any) => {
         const learnerId = session.learner_id;
-        const profile = session.learner_profile;
+        const profile = profilesData.find(p => p.user_id === learnerId);
         
         if (!studentMap.has(learnerId)) {
           studentMap.set(learnerId, {
@@ -112,8 +128,9 @@ const Students = () => {
 
         if (session.status === 'completed') {
           student.completedSessions++;
-          if (session.payment?.amount) {
-            student.totalEarnings += session.payment.amount;
+          const payment = Array.isArray(session.payment) ? session.payment[0] : session.payment;
+          if (payment?.amount) {
+            student.totalEarnings += payment.amount;
           }
         }
 

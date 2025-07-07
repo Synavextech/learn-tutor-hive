@@ -40,7 +40,7 @@ interface Session {
   payment?: {
     status: string;
     amount: number;
-  };
+  } | null;
 }
 
 const Sessions = () => {
@@ -87,13 +87,14 @@ const Sessions = () => {
         }
       }
 
-      // Merge profiles with session data
+      // Merge profiles with session data and fix payment type
       const sessionsWithProfiles = data?.map(session => ({
         ...session,
         tutor: {
           ...session.tutor,
           profile: profilesData.find(p => p.user_id === session.tutor?.user_id) || null
-        }
+        },
+        payment: Array.isArray(session.payment) ? session.payment[0] || null : session.payment
       })) || [];
 
       setSessions(sessionsWithProfiles);
