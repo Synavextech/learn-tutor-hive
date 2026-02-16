@@ -15,8 +15,8 @@ const Index = () => {
             </div>
             <div className="flex space-x-4">
               <Button variant="ghost" className="text-navy-night hover:text-royal-blue" onClick={() => window.location.href = '/find-tutors'}>Find Tutors</Button>
-              <Button variant="ghost" className="text-navy-night hover:text-royal-blue" onClick={() => window.location.href = '/tutor-application'}>Become a Tutor</Button>
-              <Button variant="outline" className="border-royal-blue text-royal-blue hover:bg-royal-blue hover:text-white" onClick={() => window.location.href = '/auth'}>Login/Register</Button>
+              <Button variant="ghost" className="text-navy-night hover:text-royal-blue" onClick={() => window.location.href = '/auth?role=tutor&mode=signup'}>Become a Tutor</Button>
+              <Button variant="outline" className="border-royal-blue text-royal-blue hover:bg-royal-blue hover:text-white" onClick={() => window.location.href = '/auth?mode=login'}>Login/Register</Button>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@ const Index = () => {
           </p>
           <div className="flex justify-center gap-4">
             <Button size="lg" className="px-8 bg-royal-blue hover:bg-royal-blue/90 text-white" onClick={() => window.location.href = '/find-tutors'}>Find a Tutor</Button>
-            <Button size="lg" variant="outline" className="px-8 border-white text-white hover:bg-white hover:text-navy-night" onClick={() => window.location.href = '/tutor-application'}>Become a Tutor</Button>
+            <Button size="lg" variant="outline" className="px-8 border-white text-white hover:bg-white hover:text-navy-night" onClick={() => window.location.href = '/auth?role=tutor&mode=signup'}>Become a Tutor</Button>
           </div>
         </div>
       </section>
@@ -144,7 +144,7 @@ const Index = () => {
                   <li>• Schedule sessions that fit your availability</li>
                   <li>• Track your learning progress</li>
                 </ul>
-                <Button className="w-full bg-royal-blue hover:bg-royal-blue/90 text-white" onClick={() => window.location.href = '/auth'}>Start Learning Today</Button>
+                <Button className="w-full bg-royal-blue hover:bg-royal-blue/90 text-white" onClick={() => window.location.href = '/auth?role=learner&mode=signup'}>Start Learning Today</Button>
               </CardContent>
             </Card>
 
@@ -162,7 +162,7 @@ const Index = () => {
                   <li>• Build your reputation with student reviews</li>
                   <li>• Access teaching tools and resources</li>
                 </ul>
-                <Button className="w-full" variant="outline" onClick={() => window.location.href = '/tutor-application'}>Apply to Teach</Button>
+                <Button className="w-full" variant="outline" onClick={() => window.location.href = '/auth?role=tutor&mode=signup'}>Apply to Teach</Button>
               </CardContent>
             </Card>
           </div>

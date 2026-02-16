@@ -9,7 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Star, MapPin, Clock, MessageCircle } from 'lucide-react';
+import { Search, Star, MapPin, Clock, MessageCircle, GraduationCap, Globe, CheckCircle, BookOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Tutor {
   id: string;
@@ -49,6 +51,7 @@ const FindTutors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -72,14 +75,14 @@ const FindTutors = () => {
 
       // Get unique tutor user IDs to fetch profiles
       const userIds = tutorData?.map(t => t.user_id) || [];
-      
+
       let profilesData: any[] = [];
       if (userIds.length > 0) {
         const { data: profiles, error: profileError } = await supabase
           .from('profiles')
           .select('user_id, first_name, last_name, bio, avatar_url')
           .in('user_id', userIds);
-        
+
         if (!profileError) {
           profilesData = profiles || [];
         }
@@ -114,13 +117,13 @@ const FindTutors = () => {
   };
 
   const filteredTutors = tutors.filter(tutor => {
-    const matchesSearch = 
+    const matchesSearch =
       tutor.profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tutor.profile?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tutor.profile?.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tutor.subjects.some(ts => ts.subject.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesSubject = !selectedSubject || 
+    const matchesSubject = !selectedSubject ||
       tutor.subjects.some(ts => ts.subject.id === selectedSubject);
 
     const matchesCategory = !selectedCategory ||
@@ -174,12 +177,15 @@ const FindTutors = () => {
                 />
               </div>
 
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory || "all"}
+                onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -188,12 +194,15 @@ const FindTutors = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+              <Select
+                value={selectedSubject || "all"}
+                onValueChange={(value) => setSelectedSubject(value === "all" ? "" : value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Subjects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Subjects</SelectItem>
+                  <SelectItem value="all">All Subjects</SelectItem>
                   {subjects
                     .filter(subject => !selectedCategory || subject.category === selectedCategory)
                     .map(subject => (
@@ -251,7 +260,7 @@ const FindTutors = () => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   {tutor.profile?.bio && (
                     <p className="text-sm text-muted-foreground line-clamp-3">
@@ -302,7 +311,7 @@ const FindTutors = () => {
                       <MessageCircle className="mr-2 h-4 w-4" />
                       Contact
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => setSelectedTutor(tutor)}>
                       View Profile
                     </Button>
                   </div>
@@ -311,6 +320,96 @@ const FindTutors = () => {
             ))
           )}
         </div>
+
+        <Dialog open={!!selectedTutor} onOpenChange={(open) => !open && setSelectedTutor(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Tutor Profile</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-full max-h-[calc(90vh-100px)] pr-4">
+              {selectedTutor && (
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="flex flex-col md:flex-row gap-6 items-start">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={selectedTutor.profile?.avatar_url} />
+                      <AvatarFallback className="text-2xl">
+                        {getTutorName(selectedTutor)[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold">{getTutorName(selectedTutor)}</h2>
+                      <div className="flex items-center space-x-4 mt-2 text-muted-foreground">
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          <span>{selectedTutor.experience_years} Years Exp.</span>
+                        </div>
+                        <div className="flex items-center text-primary font-semibold">
+                          <span>${selectedTutor.hourly_rate}/hr</span>
+                        </div>
+                      </div>
+                      {selectedTutor.profile?.bio && (
+                        <p className="mt-4 text-muted-foreground leading-relaxed">
+                          {selectedTutor.profile.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Languages */}
+                  {selectedTutor.languages && selectedTutor.languages.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold flex items-center mb-3">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Languages
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedTutor.languages.map((lang, i) => (
+                          <Badge key={i} variant="secondary">{lang}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Education */}
+                  {selectedTutor.education && (
+                    <div>
+                      <h3 className="font-semibold flex items-center mb-3">
+                        <GraduationCap className="h-4 w-4 mr-2" />
+                        Education
+                      </h3>
+                      <p className="text-muted-foreground">{selectedTutor.education}</p>
+                    </div>
+                  )}
+
+                  {/* Subjects */}
+                  <div>
+                    <h3 className="font-semibold flex items-center mb-3">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Subjects
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedTutor.subjects.map((ts, i) => (
+                        <div key={i} className="flex justify-between items-center p-3 rounded-lg border bg-card">
+                          <span className="font-medium">{ts.subject.name}</span>
+                          <Badge variant="outline">{ts.proficiency_level}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className="pt-4 flex justify-end">
+                    <Button onClick={() => handleContactTutor(selectedTutor.id)} className="w-full md:w-auto">
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Contact Tutor
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

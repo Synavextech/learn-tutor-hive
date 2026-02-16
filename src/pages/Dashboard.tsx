@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  BookOpen, 
-  Calendar, 
-  MessageSquare, 
-  DollarSign, 
-  Users, 
+import {
+  BookOpen,
+  Calendar,
+  MessageSquare,
+  DollarSign,
+  Users,
   Clock,
   TrendingUp,
   Star
@@ -38,6 +38,7 @@ const Dashboard = () => {
     totalMessages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [tutorStatus, setTutorStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -68,12 +69,13 @@ const Dashboard = () => {
           // Get tutor id first
           const { data: tutorData } = await supabase
             .from('tutors')
-            .select('id')
+            .select('id, status')
             .eq('user_id', user.id)
             .single();
-          
+
           if (tutorData) {
             sessionsQuery = sessionsQuery.eq('tutor_id', tutorData.id);
+            setTutorStatus(tutorData.status);
           }
         }
 
@@ -94,7 +96,7 @@ const Dashboard = () => {
             .select('id')
             .eq('user_id', user.id)
             .single();
-          
+
           if (tutorData) {
             upcomingQuery.eq('tutor_id', tutorData.id);
           }
@@ -124,6 +126,8 @@ const Dashboard = () => {
     fetchUserData();
   }, [user]);
 
+
+
   const hasRole = (role: string) => userRoles.some(r => r.role === role);
 
   const renderLearnerDashboard = () => (
@@ -139,7 +143,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Learning sessions completed</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
@@ -150,7 +154,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Sessions scheduled</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
@@ -161,7 +165,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Chat messages</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progress</CardTitle>
@@ -244,7 +248,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Active students</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sessions Taught</CardTitle>
@@ -255,7 +259,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Teaching sessions completed</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -266,7 +270,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
@@ -353,8 +357,31 @@ const Dashboard = () => {
         </div>
 
         {hasRole('learner') && renderLearnerDashboard()}
-        {hasRole('tutor') && renderTutorDashboard()}
-        
+
+        {hasRole('tutor') && (
+          <>
+            {tutorStatus !== 'approved' ? (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                <Card className="w-full max-w-md">
+                  <CardHeader>
+                    <CardTitle>Complete Your Tutor Application</CardTitle>
+                    <CardDescription>
+                      You need to complete your tutor application to access the dashboard.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full" onClick={() => window.location.href = '/tutor-application'}>
+                      Complete Application
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              renderTutorDashboard()
+            )}
+          </>
+        )}
+
         {!hasRole('learner') && !hasRole('tutor') && (
           <Card>
             <CardHeader>

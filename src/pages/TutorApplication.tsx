@@ -170,7 +170,7 @@ const TutorApplication = () => {
   };
 
   const updateSubjectProficiency = (subjectId: string, proficiency: string) => {
-    setSelectedSubjects(prev => prev.map(s => 
+    setSelectedSubjects(prev => prev.map(s =>
       s.subject_id === subjectId ? { ...s, proficiency_level: proficiency } : s
     ));
   };
@@ -187,11 +187,6 @@ const TutorApplication = () => {
 
     setSubmitting(true);
     try {
-      // Add tutor role if not exists
-      await supabase
-        .from('user_roles')
-        .upsert({ user_id: user!.id, role: 'tutor' });
-
       // Create or update tutor application
       const { data: tutorData, error: tutorError } = await supabase
         .from('tutors')
@@ -231,7 +226,7 @@ const TutorApplication = () => {
 
       toast({
         title: "Application Submitted",
-        description: existingApplication 
+        description: existingApplication
           ? "Your tutor application has been updated."
           : "Your tutor application has been submitted for review.",
       });
@@ -484,8 +479,8 @@ const TutorApplication = () => {
         {/* Submit Button */}
         <Card>
           <CardContent className="pt-6">
-            <Button 
-              onClick={handleSubmit} 
+            <Button
+              onClick={handleSubmit}
               disabled={submitting || selectedSubjects.length === 0}
               className="w-full"
               size="lg"
@@ -499,7 +494,7 @@ const TutorApplication = () => {
                 existingApplication ? 'Update Application' : 'Submit Application'
               )}
             </Button>
-            
+
             {selectedSubjects.length === 0 && (
               <p className="text-sm text-muted-foreground text-center mt-2">
                 Please select at least one subject to teach
